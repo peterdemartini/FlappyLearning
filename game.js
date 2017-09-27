@@ -26,11 +26,16 @@ var Neuvol
 var game
 var FPS = 60
 
-var images = {}
-
-var speed = function(fps) {
-  FPS = parseInt(fps)
+window.restart = function() {
+  if (Neuvol) {
+    Neuvol.restart()
+  }
+  if (game) {
+    game.reset()
+  }
+  window.store.clearAll()
 }
+var images = {}
 
 var loadImages = function(sources, callback) {
   var nb = 0
@@ -178,7 +183,6 @@ Game.prototype.update = function() {
       if (this.birds[i].isDead(this.height, this.pipes)) {
         this.birds[i].alive = false
         this.alives--
-        //console.log(this.alives);
         Neuvol.networkScore(this.gen[i], this.score)
         if (this.isItEnd()) {
           this.start()
@@ -209,20 +213,22 @@ Game.prototype.update = function() {
   }
 
   this.score++
-  this.maxScore = store.get("maxScore") || 0
+  this.maxScore = window.store.get("maxScore") || 0
   this.maxScore = this.score > this.maxScore ? this.score : this.maxScore
-  store.set("maxScore", this.maxScore)
+  window.store.set("maxScore", this.maxScore)
   var self = this
 
-  if (FPS == 0) {
-    setZeroTimeout(function() {
-      self.update()
-    })
-  } else {
-    setTimeout(function() {
-      self.update()
-    }, 1000 / FPS)
-  }
+  this._timeout = setTimeout(function() {
+    self.update()
+  }, 1000 / FPS)
+}
+
+Game.prototype.reset = function() {
+  this.birds = []
+  this.score = 0
+  this.maxScore = 0
+  window.store.set("maxScore", 0)
+  clearTimeout(this._timeout)
 }
 
 Game.prototype.isItEnd = function() {
@@ -305,7 +311,7 @@ window.onload = function() {
 
   var start = function() {
     Neuvol = new Neuroevolution({
-      population: 50,
+      population: 10,
       network: [2, [2], 1],
     })
     game = new Game()
